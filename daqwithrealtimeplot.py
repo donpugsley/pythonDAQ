@@ -13,17 +13,17 @@ import pickle
 from datetime import datetime
 import scipy.io
 
+import plotters as p
 
 # Parameters
-sampling_freq_in = 1000  # in Hz
-buffer_in_size = 100
+sampling_freq_in = 2000  # in Hz
+buffer_in_size = 200
 bufsize_callback = buffer_in_size
 buffer_in_size_cfg = round(buffer_in_size * 1)  # clock configuration
 chans_in = 3  # set to number of active OPMs (x2 if By and Bz are used, but that is not recommended)
 refresh_rate_plot = 10  # in Hz
-crop = 10  # number of seconds to drop at acquisition start before saving
+crop = 0  # number of seconds to drop at acquisition start before saving
 my_filename = 'test_3_opms'  # with full path if target folder different from current folder (do not leave trailing /)
-
 
 
 # Initialize data placeholders
@@ -39,7 +39,7 @@ def ask_user():
 
 
 def cfg_read_task(acquisition):  # uses above parameters
-    acquisition.ai_channels.add_ai_voltage_chan("cDAQ1Mod1/ai0:2")  # has to match with chans_in
+    acquisition.ai_channels.add_ai_voltage_chan("cDAQ1Mod3/ai0:2")  # has to match with chans_in
     acquisition.timing.cfg_samp_clk_timing(rate=sampling_freq_in, sample_mode=constants.AcquisitionType.CONTINUOUS,
                                            samps_per_chan=buffer_in_size_cfg)
 
@@ -147,3 +147,4 @@ xticklabels = np.arange(0, xticks.size, 1)
 ax3.set_xticks(xticks)
 ax3.set_xticklabels(xticklabels)
 plt.show()
+

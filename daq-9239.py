@@ -1,5 +1,4 @@
-﻿import sys
-import pprint
+﻿import pprint
 import nidaqmx
 from nidaqmx.constants import Edge
 from nidaqmx.constants import AcquisitionType
