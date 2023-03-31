@@ -26,7 +26,7 @@ def threeplot(t,x,y,z,units,title):
     plt.tick_params(axis='both', which='major', labelsize=12)
     # plt.axis([0, 1100, 0, 1100000])
     plt.grid(visible='true')
-    plt.show()
+    plt.show(block=False)
 
 def tf(x,y,z):
     return np.sqrt(x*x+y*y+z*z)
@@ -42,7 +42,7 @@ def oneplot(t,v,units,title):
     plt.tick_params(axis='both', which='major', labelsize=12)
     # plt.axis([0, 1100, 0, 1100000])
     plt.grid(visible='true')
-    plt.show()
+    plt.show(block=False)
 
 def lsd(t,v,sr,units,title):
     freqs, psd = signal.welch(v,fs=sr,nperseg=len(v)//2)
@@ -59,7 +59,7 @@ def lsd(t,v,sr,units,title):
     plt.ylabel(units+'/rtHz')
     plt.tight_layout()
     plt.grid(visible='true')
-    plt.show()
+    plt.show(block=False)
 
 def threelsd(x,y,z,sr,units,title,lx,ly,lz,welchfactor):
     xfreqs, xpsd = signal.welch(x,fs=sr,nperseg=len(x)//welchfactor)
@@ -78,7 +78,7 @@ def threelsd(x,y,z,sr,units,title,lx,ly,lz,welchfactor):
     plt.ylabel(units+'/rtHz')
     plt.tight_layout()
     plt.grid(visible='true')
-    plt.show()
+    plt.show(block=False)
 
 def sg(v,sr,units,title):
     freqs, times, spectrogram = signal.spectrogram(v,fs=sr)
@@ -89,7 +89,7 @@ def sg(v,sr,units,title):
     plt.xlabel('Time')
     plt.tight_layout()
     plt.ylim([0, sr/2])
-    plt.show()
+    plt.show(block=False)
 
 # import matplotlib as mpl
 # def scattermap(lats,lons,title):
