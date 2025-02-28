@@ -39,7 +39,7 @@ def ask_user():
 
 
 def cfg_read_task(acquisition):  # uses above parameters
-    acquisition.ai_channels.add_ai_voltage_chan("cDAQ1Mod3/ai0:2")  # has to match with chans_in
+    acquisition.ai_channels.add_ai_voltage_chan("cDAQ3Mod2/ai0:2")  # has to match with chans_in
     acquisition.timing.cfg_samp_clk_timing(rate=sampling_freq_in, sample_mode=constants.AcquisitionType.CONTINUOUS,
                                            samps_per_chan=buffer_in_size_cfg)
 
