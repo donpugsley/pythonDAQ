@@ -1,7 +1,6 @@
 import nidaqmx
 
-
-local_system = nidaqmx.system.System.local()
+local_system = nidaqmx.System.local()
 driver_version = local_system.driver_version
 
 print('DAQmx {0}.{1}.{2}'.format(driver_version.major_version, driver_version.minor_version,

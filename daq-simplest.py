@@ -8,7 +8,7 @@ pp = pprint.PrettyPrinter(indent=4)
 if len(sys.argv) > 1:
     device = sys.argv[1]
 else:
-    device = "cDAQ1Mod1/ai2"
+    device = "cDAQ3Mod1/ai0"
     print(f'Pass device/channel as string argument... using {device}')
 
 with nidaqmx.Task() as task: # Creates task object

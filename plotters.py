@@ -71,8 +71,8 @@ def oneplot(t,v,units,title):
     plt.grid(visible=True)
     plt.show()
 
-def lsd(t,v,sr,units,title):
-    freqs, psd = signal.welch(v,fs=sr,nperseg=len(v)//2)
+def lsd(t,v,sr,units,title,welchfactor=6):
+    freqs, psd = signal.welch(v,fs=sr,nperseg=len(v)//welchfactor)
     lsd = np.sqrt(psd) 
     lsfreqs = freqs[1]+freqs[1:] # Duplicate first nonzero point, LS doesn't like 0 freq
     lspsd = signal.lombscargle(t,v,lsfreqs/(2*np.pi)) # Convert from Hz to rads/sec
@@ -87,7 +87,7 @@ def lsd(t,v,sr,units,title):
     plt.grid(visible=True)
     plt.show()
 
-def threelsd(x,y,z,sr,units,title,lx,ly,lz,welchfactor):
+def threelsd(x,y,z,sr,units,title,lx,ly,lz,welchfactor=6):
     xfreqs, xpsd = signal.welch(x,fs=sr,nperseg=len(x)//welchfactor)
     lsdx = np.sqrt(xpsd)
     yfreqs, ypsd = signal.welch(y,fs=sr,nperseg=len(y)//welchfactor)
