@@ -16,51 +16,6 @@ from datetime import datetime
 # This will suppress INFO and DEBUG messages.
 # logging.getLogger('pyvisa').setLevel(logging.WARNING)
 
-# Map SN to VISA address
-visa_addr_map = {
-    119: 'USB0::0x0957::0x9018::SG52350119::0::INSTR',
-    120: 'USB0::0x0957::0x9018::SG52350120::0::INSTR'
-}
-
-# pyvisa.log_to_screen()
-
-# --- Configuration ---
-SN = 119  # Serial number of Keysight SMU
-coil_const = 1.0  # Oe/amp for coil
-dt = 0.1  # duration of DC step (seconds)
-CH1_LIMIT = 21  # Volts or Amps safety limit
-VC = 'VOLT' # VOLT or CURR
-
-# --- 1. Generate Waveform ---
-Oe = np.linspace(-20, 20, 53)
-Oe = np.concatenate([Oe, np.flip(Oe)])
-Oe = np.concatenate([Oe, np.flip(Oe)]) # Repeat pattern 11 times
-Oe = np.tile(Oe, 11)
-
-amps = Oe / coil_const
-
-# --- 2. Build Waveform List ---
-# Format: ':SOUR1:ARB:CURR:UDEF:LEV %s' (String list)
-# MATLAB used %.12f, we replicate that precision
-list_str = [f"{amp:.12f}" for amp in amps]
-
-# CH1 Configuration
-ch1_config = {
-    'OFFMODE': 'NORM',
-    'PROTECTION': 'OFF',
-    'REM': 'OFF',
-    'HCAP': 'OFF',
-    'DFILT': 'OFF',
-    'DFILT_FREQ': 5e-6,
-    'EXT_FILT': 'OFF',
-    'EXT_FILT_TYPE': 'HCULNF',
-    'OCOM': 'OFF',
-    'LIMIT': f'{CH1_LIMIT}',
-    'OUTPUTMODE': VC
-}
-
-
-
 def config_keysight(SN, CH, CONFIG):
     """
     Setup Keysight instrument.
@@ -250,6 +205,9 @@ def KeysightInit(KS):
     # print(instr.query('*LRN?'))
     return (ki)
 
+def KeysightClear(ki):
+    ki.write('*CLS')
+    
 def KeysightReset(ki):
     # Reset
     ki.query('*RST')
@@ -283,21 +241,55 @@ def KeysightSine(ki,freq,vpp=2.0,offset=0.0): # # Recall saved settings from slo
 def set_config(inst, channel, config_dict):
     for param, val in config_dict.items():
         command = f':SOUR{channel}:{param} {val}'
-        print(command)
+        print(command, end="")
         status=inst.write(command)
-        inst.query(':SYSTem:ERRor?')
+        print(" ... ", inst.query(':SYSTem:ERRor?'))
 
-print("Opening and configuring Keysight B2962A...")
-inst = KeysightInit('USB0::0x0957::0x9018::SG52350119::0::INSTR')
+# Map SN to VISA address
+visa_addr_map = {
+    119: 'USB0::0x0957::0x9018::SG52350119::0::INSTR',
+    120: 'USB0::0x0957::0x9018::SG52350120::0::INSTR'
+}
 
-# Send config list to instrument
-set_config(inst, 1, ch1_config)
+# pyvisa.log_to_screen()
+
+# --- Configuration ---
+SN = 119  # Serial number of Keysight SMU
+coil_const = 5000  # 5000 nT/mA for old solenoid
+dt = 0.1  # duration of DC step (seconds)
+CH1_LIMIT = 0.5  # Volts or Amps safety limit
+VC = 'CURR' # VOLT or CURR
+
+# --- 1. Generate Waveform ---
+nT = np.linspace(-20, 20, 53)
+nT = np.concatenate([nT, np.flip(nT)])
+nT = np.concatenate([nT, np.flip(nT)]) # Repeat pattern 11 times
+nT = np.tile(nT, 11)
+
+amps = nT / coil_const
+
+# --- 2. Build Waveform List ---
+# Format: ':SOUR1:ARB:CURR:UDEF:LEV %s' (String list)
+# MATLAB used %.12f, we replicate that precision
+list_str = [f"{amp:.12f}" for amp in amps]
+
+print(f"Opening and configuring Keysight B2962A Serial Number {SN}...")
+inst = KeysightInit(f'USB0::0x0957::0x9018::SG52350{SN}::0::INSTR')
+KeysightClear(inst)
+KeysightOutputOff(inst)
+
+# Configure using config structure... needs code changes, not working now
+# set_config(inst, 1, ch1_config) commands are wrong for this device???? ask George
 # set_config(inst, 2, ch2_config) # Uncomment if you need CH2 configured
 
-input("Press Enter to start output...")
 inst.write(f'SOUR1:{VC}:LEV:IMM:AMPL 0.0')
+inst.write(f':SOUR1:FUNC:MODE {VC}')
+inst.write(f':SENSE:{VC}:PROT:LEV:BOTH {CH1_LIMIT}')
+# inst.write(f'SOUR1:{VC}:LEV:IMM:AMPL 0.0')
 inst.write(':OUTP1 ON')
-time.sleep(dt)
+
+# input("Press Enter to start output...")
+
 for val in list_str:
     command = f':SOUR1:{VC}:LEV:IMM:AMPL {val}'
     print(command)
