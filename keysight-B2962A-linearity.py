@@ -296,10 +296,13 @@ else:
     print ('Using constant current mode.')
 
 inst.write(f':SOUR1:FUNC:MODE {VC}')
-inst.write (':SOUR1:RANGE:AUTO ON')
+inst.write (':SOUR1:VOLT:RANGE 20')
+# inst.write (':SOUR1:CURR:RANGE 3') # Can't have both V and C range explicitly set
 inst.write(f':SOUR1:{VC} 0.0')
 inst.write(f':SENS1:CURR:PROT:LEV:BOTH {AMPS_LIMIT}')
 inst.write(f':SENS1:VOLT:PROT:LEV:BOTH {VOLTS_LIMIT}')
+inst.write (':OUTP1:FILT ON')
+inst.write (':OUTP1:FILT:FREQ 1000') # Spikes are still present even with 10 Hz lowpass filter???
 inst.write (':OUTP1 ON')
 
 # input("Press Enter to start output...")
