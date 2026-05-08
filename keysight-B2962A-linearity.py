@@ -11,6 +11,7 @@ import pandas as pd
 import plotters as p
 import logging
 from datetime import datetime
+import argparse
 
 # Set the logging level for the 'pyvisa' logger to WARNING or higher
 # This will suppress INFO and DEBUG messages.
@@ -245,26 +246,27 @@ def set_config(inst, channel, config_dict):
         status=inst.write(command)
         print(" ... ", inst.query(':SYSTem:ERRor?'))
 
-# Map SN to VISA address
-visa_addr_map = {
-    119: 'USB0::0x0957::0x9018::SG52350119::0::INSTR',
-    120: 'USB0::0x0957::0x9018::SG52350120::0::INSTR'
-}
-
-# pyvisa.log_to_screen()
+parser = argparse.ArgumentParser()
+parser.add_argument("startval", nargs='?', default=-20, help="Starting output value")
+parser.add_argument("stopval", nargs='?', default=20, help="Starting output value")
+parser.add_argument("nsteps", nargs='?', default=11, help="Number of steps")
+parser.add_argument("stepsecs", nargs='?', default=0.2, help="Seconds to wait at each step")
+parser.add_argument("nreps", nargs='?', default=10, help="Number of up-and-back-down pattern repetitions")
+args = parser.parse_args()
 
 # --- Configuration ---
-SN = 119  # Serial number of Keysight SMU
 coil_const = 5000  # 5000 nT/mA for old solenoid
-dt = 0.1  # duration of DC step (seconds)
-CH1_LIMIT = 0.5  # Volts or Amps safety limit
-VC = 'CURR' # VOLT or CURR
+AMPS_LIMIT = 3.0  # Chooses range... 3 A/2V, 3A/20V
+VOLTS_LIMIT = 20.0  # 
+VC = 'CURR' # Constant Voltage or Constant Current mode
 
-# --- 1. Generate Waveform ---
-nT = np.linspace(-20, 20, 53)
+dt = float(args.stepsecs)  # duration of DC step (seconds)
+
+# Generate output sequence - maybe should start at 0?  not yet
+nT = np.linspace(int(args.startval), int(args.stopval), int(args.nsteps)) 
 nT = np.concatenate([nT, np.flip(nT)])
-nT = np.concatenate([nT, np.flip(nT)]) # Repeat pattern 11 times
-nT = np.tile(nT, 11)
+if int(args.nreps) > 1:
+    nT = np.tile(nT,int(args.nreps)-1)
 
 amps = nT / coil_const
 
@@ -273,8 +275,14 @@ amps = nT / coil_const
 # MATLAB used %.12f, we replicate that precision
 list_str = [f"{amp:.12f}" for amp in amps]
 
-print(f"Opening and configuring Keysight B2962A Serial Number {SN}...")
-inst = KeysightInit(f'USB0::0x0957::0x9018::SG52350{SN}::0::INSTR')
+print(f"Opening and configuring Keysight B2962A...")
+
+# We only have two possibilities... SN 119 and 120
+try:
+    inst = KeysightInit(f'USB0::0x0957::0x9018::SG52350119::0::INSTR')
+except:
+    inst = KeysightInit(f'USB0::0x0957::0x9018::SG52350120::0::INSTR')
+
 KeysightClear(inst)
 KeysightOutputOff(inst)
 
@@ -282,11 +290,17 @@ KeysightOutputOff(inst)
 # set_config(inst, 1, ch1_config) commands are wrong for this device???? ask George
 # set_config(inst, 2, ch2_config) # Uncomment if you need CH2 configured
 
-inst.write(f'SOUR1:{VC}:LEV:IMM:AMPL 0.0')
+if VC.__contains__('VOLT'):
+    print ('Using constant voltage mode.')
+else:
+    print ('Using constant current mode.')
+
 inst.write(f':SOUR1:FUNC:MODE {VC}')
-inst.write(f':SENSE:{VC}:PROT:LEV:BOTH {CH1_LIMIT}')
-# inst.write(f'SOUR1:{VC}:LEV:IMM:AMPL 0.0')
-inst.write(':OUTP1 ON')
+inst.write (':SOUR1:RANGE:AUTO ON')
+inst.write(f':SOUR1:{VC} 0.0')
+inst.write(f':SENS1:CURR:PROT:LEV:BOTH {AMPS_LIMIT}')
+inst.write(f':SENS1:VOLT:PROT:LEV:BOTH {VOLTS_LIMIT}')
+inst.write (':OUTP1 ON')
 
 # input("Press Enter to start output...")
 
